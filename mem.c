@@ -156,7 +156,6 @@ void *v_malloc(size_t size)
     memcpy(memory.buf + memory.offset, &new_meta, sizeof(block_t));
     memory.offset += size + sizeof(block_t);
 
-
     return &memory.buf[memory.offset - size];
 }
 
