@@ -1,0 +1,51 @@
+#!/bin/bash
+
+if [ $# -lt 2 ]; then
+    echo "usage: compiler-benchmark <program-name> <output-file> <none/org/dircord>"
+    exit
+fi
+
+PROGRAM=$1
+OUTPUT=$2
+TYPE=$3
+
+COMPILER_OPTIONS=("gcc" "clang")
+COMPILE_OPTIONS=("-O2 -march=native" "-O3 -march=native" "-Ofast -march=native" "-Os")
+
+printf "" > $OUTPUT # clean logs
+
+if [ "$TYPE" == "org" ]; then
+    printf "#+TITLE: Compiler Benchmark: $PROGRAM\n#+LaTeX_CLASS: book\n#+OPTIONS: toc:nil author:nil date:nil num:nil\n" > $OUTPUT
+fi
+
+for COMPILER in {0..1}
+do
+    export CC="${COMPILER_OPTIONS[$COMPILER]}"
+    if [ "$TYPE" == "org" ]; then
+	echo "* $CC" >> $OUTPUT
+    else
+	printf "\n$CC:\n\n" >> $OUTPUT
+    fi
+
+    for OPTION in {0..3}
+    do
+	export CFLAGS="${COMPILE_OPTIONS[$OPTION]}"
+	if [ "$TYPE" == "org" ]; then
+	    printf "** $CFLAGS\n#+begin_example\n" >> $OUTPUT
+	elif [ "$TYPE" == "discord" ]; then
+	    printf "\n$CFLAGS:\n\`\`\`\n" >> $OUTPUT
+	else
+	    echo "$CFLAGS:" >> $OUTPUT
+	fi
+	make clean
+	echo "compile time:" >> $OUTPUT
+	/usr/bin/time -p -a -o $OUTPUT make
+	strip $PROGRAM
+	echo "size: $(ls -l $PROGRAM | cut -d\  -f5)" >> $OUTPUT
+	if [ "$TYPE" == "org" ]; then
+	    printf "#+end_example\n" >> $OUTPUT
+	elif [ "$TYPE" == "discord" ]; then
+	    printf "\`\`\`\n" >> $OUTPUT
+	fi
+    done
+done
